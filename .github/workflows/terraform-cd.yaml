@@ -1,0 +1,71 @@
+name: Terraform CD
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write # OIDC 토큰 발급 허용
+  contents: read
+
+jobs:
+  terraform-apply:
+    if: github.repository == 'yulmwu/terraform-ci-cd-example' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::986129558966:role/github-actions-terraform
+          aws-region: ap-northeast-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Download tfplan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform
+
+      - name: Terraform Apply (Approved Plan)
+        run: terraform apply -auto-approve tfplan
+
+      - name: Slack Notify (Apply)
+        if: success()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"*Terraform Apply Completed* :white_check_mark:\nEnvironment: *production*\nRepo: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}\"
+            }" \
+            $SLACK_WEBHOOK_URL
+
+      - name: Slack Notify (Apply Failed)
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"*Terraform Apply Failed* :x:\nEnvironment: *production*\nCheck GitHub Actions logs.\"
+            }" \
+            $SLACK_WEBHOOK_URL
