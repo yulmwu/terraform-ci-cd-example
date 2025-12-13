@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
+  id-token: write # OIDC 토큰 발급 허용
   contents: read
   pull-requests: write
 
@@ -19,6 +20,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::986129558966:role/github-actions-terraform
+          aws-region: ap-northeast-2
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
