@@ -50,17 +50,19 @@ jobs:
             const fs = require('fs');
             const plan = fs.readFileSync('terraform/plan.txt', 'utf8');
 
+            const body = [
+              '### Terraform Plan Result',
+              '',
+              '```',
+              plan.substring(0, 65000),
+              '```'
+            ].join('\n');
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `
-### Terraform Plan Result
-
-\`\`\`
-${plan.substring(0, 65000)}
-\`\`\`
-`
+              body
             });
 
       - name: Slack Notify (Plan)
