@@ -36,7 +36,7 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           VALIDATE_STATUS: ${{ steps.validate.outcome }}
         run: |
-          RESULT=$(sed 's/"/\\"/g' validate.txt | head -c 3000)
+          RESULT=$(sed 's/"/\\"/g' terraform/validate.txt | head -c 3000)
 
           if [ "$VALIDATE_STATUS" = "success" ]; then
             STATUS_TEXT="SUCCESS"
