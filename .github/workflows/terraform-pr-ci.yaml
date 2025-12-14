@@ -28,32 +28,24 @@ jobs:
       - name: Terraform Init
         run: terraform init -input=false
 
-      - name: Terraform Validate
-        id: validate
-        continue-on-error: true
-        run: terraform validate 2>&1 | tee validate.txt
+      - name: Slack Notify (Validate Result)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          VALIDATE_STATUS: ${{ steps.validate.outcome }}
+        run: |
+          RESULT=$(sed 's/"/\\"/g' terraform/validate.txt | head -c 3000)
 
-      - name: Comment PR with validation result
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs')
-            const validateOutput = fs.readFileSync('terraform/validate.txt', 'utf8')
-            const status = '${{ steps.validate.outcome }}'
+          if [ "$VALIDATE_STATUS" = "success" ]; then
+            STATUS_TEXT="SUCCESS"
+          else
+            STATUS_TEXT="FAILED"
+          fi
 
-            const body = [
-              '### Terraform validation result',
-              '',
-              `**Status:** ${status === 'success' ? 'Valid' : 'Invalid'}`,
-              '',
-              '```',
-              validateOutput.substring(0, 65000),
-              '```'
-            ].join('\n')
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body
-            })
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"*Terraform Validate ${STATUS_TEXT}*\n*PR:* <${PR_URL}|${PR_TITLE}>\n*Author:* ${PR_AUTHOR}\n\n\`\`\`\n${RESULT}\n\`\`\`\"
+            }" \
+            $SLACK_WEBHOOK_URL
