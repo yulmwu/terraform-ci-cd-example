@@ -18,7 +18,8 @@ jobs:
       - name: Download validate artifact
         uses: actions/download-artifact@v4
         with:
-          name: tf-validate-${{ github.event.workflow_run.pull_requests[0].number }}
+          name: validate-result
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Send Slack
         env:
