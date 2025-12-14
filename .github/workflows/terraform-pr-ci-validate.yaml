@@ -36,7 +36,7 @@ jobs:
 
       - name: Upload Validate Result
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: validate-result
           path: terraform/validate.txt
