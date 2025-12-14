@@ -30,6 +30,7 @@ jobs:
       - name: Read planned commit SHA
         id: planmeta
         run: echo "sha=$(cat /tmp/terraform-artifact/plan.sha)" >> $GITHUB_OUTPUT
+        working-directory: /
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,8 +39,8 @@ jobs:
 
       - name: Move artifacts to working directory
         run: |
-          mv /tmp/terraform-artifact/tfplan ./tfplan
-          mv /tmp/terraform-artifact/.terraform.lock.hcl ./.terraform.lock.hcl
+          mkdir -p terraform
+          cp /tmp/terraform-artifact/* terraform/
 
       - name: Verify plan exists
         run: |
