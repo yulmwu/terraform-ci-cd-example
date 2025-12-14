@@ -20,7 +20,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: validate-result
-          run-id: ${{ github.event.workflow_run.id }}
+          # run-id: ${{ github.event.workflow_run.id }}
 
       - name: Send Slack
         env:
