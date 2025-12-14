@@ -1,0 +1,34 @@
+name: Terraform Validate Slack Notify
+
+on:
+  workflow_run:
+    workflows: ["Terraform PR Validate"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download validate artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tf-validate-${{ github.event.pull_request.number }}
+
+      - name: Send Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          RESULT=$(sed 's/"/\\"/g' validate.txt | head -c 3000)
+
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \":mag: *Terraform Validate Result*\nPR: <$PR_URL>\n\`\`\`$RESULT\`\`\` \"
+            }" \
+            "$SLACK_WEBHOOK_URL"
