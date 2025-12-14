@@ -1,1 +1,1 @@
-# terraform-ci-cd-example (Fork)
+# terraform-ci-cd-example
